@@ -1,73 +1,71 @@
-// Cargar catálogo desde el servidor
-async function cargarCatalogo() {
-  const catalogo = document.getElementById("catalogo");
-  catalogo.innerHTML = "Cargando...";
+import express from "express";
+import cors from "cors";
+import fileUpload from "express-fileupload";
+import mysql from "mysql2";
+import path from "path";
+import { fileURLToPath } from "url";
 
-  try {
-    const res = await fetch("/api/panes");
-    const data = await res.json();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-    if (!Array.isArray(data)) {
-      catalogo.innerHTML = "Error al cargar panes";
-      return;
-    }
+const app = express();
+const PORT = 3000;
 
-    catalogo.innerHTML = "";
+app.use(cors());
+app.use(express.json());
+app.use(fileUpload());
 
-    data.forEach(pan => {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.padding = "10px";
-      div.style.margin = "10px 0";
-      div.style.borderRadius = "8px";
+// Servir carpeta public
+app.use(express.static(path.join(__dirname, "public")));
 
-      const img = document.createElement("img");
-      img.src = `data:image/jpeg;base64,${pan.imagen}`;
-      img.style.width = "150px";
-      img.style.height = "150px";
-      img.style.objectFit = "cover";
-      img.style.borderRadius = "8px";
-
-      div.innerHTML = `
-        <h3>${pan.nombre}</h3>
-        <p><strong>Precio:</strong> $${pan.precio}</p>
-        <p><strong>Cantidad:</strong> ${pan.cantidad}</p>
-        <p>${pan.descripcion}</p>
-      `;
-
-      div.prepend(img);
-      catalogo.appendChild(div);
-    });
-  } catch (err) {
-    catalogo.innerHTML = "Error de conexión con el servidor";
-  }
-}
-
-// Guardar pan en la base de datos
-const formPan = document.getElementById("formPan");
-formPan.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const formData = new FormData(formPan);
-
-  try {
-    const res = await fetch("/api/guardar", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json();
-
-    if (data.ok) {
-      alert("Pan guardado correctamente");
-      formPan.reset();
-      cargarCatalogo();
-    } else {
-      alert("Error al guardar el pan");
-    }
-  } catch (error) {
-    alert("Error de conexión con el servidor");
-  }
+// Configuración MySQL
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "n0m3l0",
+  database: "desesperanzaa100",
 });
 
-// Cargar catálogo al entrar\ ncargarCatalogo();
+db.connect((err) => {
+  if (err) throw err;
+  console.log("Conectado a MySQL");
+});
+
+// 🔵 OBTENER CATÁLOGO
+app.get("/api/panes", (req, res) => {
+  const sql = "SELECT id, nombre, precio, cantidad, descripcion, imagen FROM panes";
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+
+    const data = results.map((pan) => ({
+      ...pan,
+      imagen: pan.imagen ? pan.imagen.toString("base64") : null,
+    }));
+
+    res.json(data);
+  });
+});
+
+// 🟢 GUARDAR PAN
+app.post("/api/guardar", (req, res) => {
+  if (!req.files || !req.files.imagen) {
+    return res.status(400).json({ ok: false, error: "Debes subir una imagen" });
+  }
+
+  const { nombre, precio, cantidad, descripcion } = req.body;
+  const imagen = req.files.imagen.data;
+
+  const sql =
+    "INSERT INTO panes (nombre, precio, cantidad, descripcion, imagen) VALUES (?, ?, ?, ?, ?)";
+
+  db.query(sql, [nombre, precio, cantidad, descripcion, imagen], (err) => {
+    if (err) return res.status(500).json({ ok: false, error: err });
+    res.json({ ok: true, message: "Pan guardado exitosamente" });
+  });
+});
+
+// 🚀 INICIAR SERVIDOR
+app.listen(PORT, () => {
+  console.log(`Servidor arriba en http://localhost:${PORT}`);
+});
