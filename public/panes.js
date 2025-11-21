@@ -1,74 +1,68 @@
-// Cargar catálogo desde el servidor
+// =============================
+//     CARGAR CATÁLOGO
+// =============================
 async function cargarCatalogo() {
-  const catalogo = document.getElementById("catalogo");
-  catalogo.innerHTML = "Cargando...";
+  const res = await fetch("/api/panes");
+  const panes = await res.json();
 
-  try {
-    const res = await fetch("/api/panes");
-    const data = await res.json();
+  const cont = document.getElementById("catalogo");
+  cont.innerHTML = "";
 
-    if (!Array.isArray(data)) {
-      catalogo.innerHTML = "Error al cargar panes";
-      return;
-    }
+  panes.forEach((pan) => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.padding = "10px";
+    div.style.margin = "10px";
+    div.style.width = "250px";
 
-    catalogo.innerHTML = "";
+    div.innerHTML = `
+      <h3>${pan.nombre}</h3>
+      <p><strong>Precio:</strong> $${pan.precio}</p>
+      <p><strong>Cantidad:</strong> ${pan.cantidad}</p>
+      <p>${pan.descripcion}</p>
+      ${pan.imagen ? `<img src="data:image/jpeg;base64,${pan.imagen}" width="200">` : "Sin imagen"}
+    `;
 
-    data.forEach(pan => {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.padding = "10px";
-      div.style.margin = "10px 0";
-      div.style.borderRadius = "8px";
-
-      const img = document.createElement("img");
-      img.src = `data:image/jpeg;base64,${pan.imagen}`;
-      img.style.width = "150px";
-      img.style.height = "150px";
-      img.style.objectFit = "cover";
-      img.style.borderRadius = "8px";
-
-      div.innerHTML = `
-        <h3>${pan.nombre}</h3>
-        <p><strong>Precio:</strong> $${pan.precio}</p>
-        <p><strong>Cantidad:</strong> ${pan.cantidad}</p>
-        <p>${pan.descripcion}</p>
-      `;
-
-      div.prepend(img);
-      catalogo.appendChild(div);
-    });
-  } catch (err) {
-    catalogo.innerHTML = "Error de conexión con el servidor";
-  }
+    cont.appendChild(div);
+  });
 }
 
-// Guardar pan
-const formPan = document.getElementById("formPan");
-formPan.addEventListener("submit", async (e) => {
+cargarCatalogo();
+
+// =============================
+//   GUARDAR PAN NUEVO
+// =============================
+const form = document.getElementById("formPan");
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const formData = new FormData(formPan);
+  const data = new FormData(form);
 
-  try {
-    const res = await fetch("/api/guardar", {
-      method: "POST",
-      body: formData
-    });
+  const res = await fetch("/api/guardar", {
+    method: "POST",
+    body: data,
+  });
 
-    const data = await res.json();
+  const json = await res.json();
+  alert(json.message || json.error);
 
-    if (data.ok) {
-      alert("Pan guardado correctamente");
-      formPan.reset();
-      cargarCatalogo();
-    } else {
-      alert("Error al guardar el pan");
-    }
-  } catch (error) {
-    alert("Error de conexión con el servidor");
-  }
+  cargarCatalogo();
 });
 
-// Cargar catálogo automáticamente
-cargarCatalogo();
+// =============================
+//     MAPA LEAFLET
+// =============================
+const lat = -67.043144;
+const lng = 54.641906;
+
+const map = L.map("map").setView([lat, lng], 15);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+}).addTo(map);
+
+L.marker([lat, lng])
+  .addTo(map)
+  .bindPopup("Panadería Desesperanza<br>Estamos aquí 🍞")
+  .openPopup();

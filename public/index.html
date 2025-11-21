@@ -1,13 +1,21 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Panadería dedsesperanza</title>
+  <title>Panadería Desesperanza</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
+
 <body>
   <h1>Catálogo de Panes</h1>
   <div id="catalogo"></div>
+
+  <h2>Ubicación de la Panadería</h2>
+  <div id="map" style="height: 400px; width: 100%; margin-bottom:20px;"></div>
 
   <h2>Registrar pan</h2>
   <form id="formPan" enctype="multipart/form-data">
@@ -19,7 +27,11 @@
     <button type="submit">Guardar</button>
   </form>
 
-  <!-- CORRECCIÓN AQUÍ -->
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Archivo JS principal -->
   <script src="/panes.js"></script>
 </body>
+
 </html>
