@@ -1,6 +1,6 @@
-// =============================
+
 //     CARGAR CATÁLOGO
-// =============================
+
 async function cargarCatalogo() {
   const res = await fetch("/api/panes");
   const panes = await res.json();
@@ -29,9 +29,9 @@ async function cargarCatalogo() {
 
 cargarCatalogo();
 
-// =============================
+
 //   GUARDAR PAN NUEVO
-// =============================
+
 const form = document.getElementById("formPan");
 
 form.addEventListener("submit", async (e) => {
@@ -50,9 +50,9 @@ form.addEventListener("submit", async (e) => {
   cargarCatalogo();
 });
 
-// =============================
+
 //     MAPA LEAFLET
-// =============================
+
 const lat = -67.043144;
 const lng = 54.641906;
 

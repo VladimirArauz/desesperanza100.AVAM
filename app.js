@@ -31,7 +31,7 @@ db.connect((err) => {
   console.log("Conectado a MySQL");
 });
 
-// 🔵 OBTENER CATÁLOGO
+//  CATÁLOGO
 app.get("/api/panes", (req, res) => {
   const sql = "SELECT id, nombre, precio, cantidad, descripcion, imagen FROM panes";
 
@@ -47,7 +47,7 @@ app.get("/api/panes", (req, res) => {
   });
 });
 
-// 🟢 GUARDAR PAN
+//  GUARDAR PAN
 app.post("/api/guardar", (req, res) => {
   if (!req.files || !req.files.imagen) {
     return res.status(400).json({ ok: false, error: "Debes subir una imagen" });
@@ -65,7 +65,7 @@ app.post("/api/guardar", (req, res) => {
   });
 });
 
-// 🚀 INICIAR SERVIDOR
+//  INICIAR SERVIDOR
 app.listen(PORT, () => {
   console.log(`Servidor arriba en http://localhost:${PORT}`);
 });
