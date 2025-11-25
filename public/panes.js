@@ -53,8 +53,8 @@ form.addEventListener("submit", async (e) => {
 
 //     MAPA LEAFLET
 
-const lat = -67.043144;
-const lng = 54.641906;
+const lat = 19.447183;
+const lng = -99.157582;
 
 const map = L.map("map").setView([lat, lng], 15);
 
