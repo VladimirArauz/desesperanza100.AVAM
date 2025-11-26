@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Pan - Panadería</title>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header>
+    <h1>Registrar un nuevo pan</h1>
+    <a class="btn" href="index.html">Volver al catálogo</a>
+  </header>
+
+  <form id="formPan" enctype="multipart/form-data" class="formulario">
+    <input type="text" name="nombre" placeholder="Nombre" required />
+    <input type="text" name="precio" placeholder="Precio" required />
+    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01" required />
+    <textarea name="descripcion" placeholder="Descripción"></textarea>
+    <input type="file" name="imagen" accept="image/*" required />
+    <button type="submit">Guardar</button>
+  </form>
+
+  <script src="/panes.js"></script>
+
+</body>
+</html>
