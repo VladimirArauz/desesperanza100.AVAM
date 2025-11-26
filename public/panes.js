@@ -1,56 +1,100 @@
-//     CARGAR CATÁLOGO
-
+// --- CARGAR CATÁLOGO ---
 async function cargarCatalogo() {
-  const res = await fetch("/api/panes");
-  const panes = await res.json();
+  try {
+    const res = await fetch("/api/panes");
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}`);
+    }
+    const panes = await res.json();
 
-  const cont = document.getElementById("catalogo");
-  cont.innerHTML = "";
+    const cont = document.getElementById("catalogo");
+    if (!cont) return; // nothing to render into
+    cont.innerHTML = "";
 
-  panes.forEach((pan) => {
-    const div = document.createElement("div");
+    if (!Array.isArray(panes) || panes.length === 0) {
+      cont.innerHTML = `
+        <div class="col-12 text-center">
+          <div class="card-pan">No hay panes disponibles.</div>
+        </div>
+      `;
+      return;
+    }
 
-    div.innerHTML = `
-      <h3>${pan.nombre}</h3>
-      <p><strong>Precio:</strong> $${pan.precio}</p>
-      <p><strong>Cantidad:</strong> ${pan.cantidad}</p>
-      <p>${pan.descripcion}</p>
-      ${pan.imagen ? `<img src="data:image/jpeg;base64,${pan.imagen}" width="200">` : "Sin imagen"}
-    `;
+    panes.forEach((pan) => {
+      const div = document.createElement("div");
+      div.className = "col-md-4";
 
-    cont.appendChild(div);
-  });
+      // Ensure safe values and formatting
+      const precio = Number(pan.precio ?? 0).toFixed(2);
+      const cantidad = Number(pan.cantidad ?? 0);
+      const descripcion = pan.descripcion ?? "";
+      const nombre = pan.nombre ?? "Pan sin nombre";
+
+      div.innerHTML = `
+        <div class="card-pan">
+          <h4>${nombre}</h4>
+          <p><strong>Precio:</strong> $${precio}</p>
+          <p><strong>Cantidad:</strong> ${cantidad}</p>
+          <p>${descripcion}</p>
+          ${pan.imagen ? `<img class="pan-img" alt="Imagen de ${nombre}" src="data:image/jpeg;base64,${pan.imagen}">` : ""}
+        </div>
+      `;
+
+      cont.appendChild(div);
+    });
+  } catch (e) {
+    console.error("Error cargando catálogo:", e);
+    const cont = document.getElementById("catalogo");
+    if (cont) cont.innerHTML = `<div class="col-12 text-center">Error cargando catálogo.</div>`;
+  }
 }
 
-if (document.getElementById("catalogo")) {
-  cargarCatalogo();
-}
+cargarCatalogo();
 
-//   GUARDAR PAN NUEVO
-
+// --- GUARDAR PAN ---
 const form = document.getElementById("formPan");
-
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const data = new FormData(form);
+    const nombre = form.elements["nombre"]?.value?.trim();
+    const precio = Number(form.elements["precio"]?.value);
+    const cantidad = Number(form.elements["cantidad"]?.value);
+    const descripcion = form.elements["descripcion"]?.value?.trim();
+    const imagenField = form.elements["imagen"];
 
-    const res = await fetch("/api/guardar", {
-      method: "POST",
-      body: data,
-    });
+    if (!nombre) return alert("Ingresa el nombre del pan");
+    if (isNaN(precio)) return alert("Precio inválido");
+    if (isNaN(cantidad)) return alert("Cantidad inválida");
+    if (!imagenField || !imagenField.files || imagenField.files.length === 0)
+      return alert("Debes seleccionar una imagen");
 
-    const json = await res.json();
-    alert(json.message || json.error);
+    try {
+      const data = new FormData(form);
+      const res = await fetch("/api/guardar", {
+        method: "POST",
+        body: data,
+      });
 
-    form.reset();
+      const json = await res.json();
+      if (!res.ok) {
+        const errMsg = json?.error || json?.message || `Error ${res.status}`;
+        alert(`No se pudo guardar el pan: ${errMsg}`);
+        return;
+      }
+
+      alert(json.message || "Guardado");
+      form.reset();
+      // After a short delay return to the catalog
+      setTimeout(() => (window.location.href = "/"), 700);
+    } catch (err) {
+      console.error("Error guardando pan:", err);
+      alert("Ocurrió un error al guardar el pan");
+    }
   });
 }
 
-
-//     MAPA LEAFLET
-
+// MAPA LEAFLET
 if (document.getElementById("map")) {
   const lat = 19.447183;
   const lng = -99.157582;

@@ -1,50 +1,53 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
-  background: #f8f3e9;
-}
+/* COLORES NAVIDEÑOS */
+.bg-azul { background: #4040fb !important; }
+.bg-rojo { background: #ff0000 !important; }
+.bg-verde { background: #005c00 !important; }
+.bg-blanco { background: #ffffff !important; }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
+.text-blanco { color: white !important; }
 
-.btn {
-  background: #c97b28;
+/* BOTONES */
+.btn-verde {
+  background: #005c00;
   color: white;
-  padding: 10px 15px;
-  text-decoration: none;
-  border-radius: 5px;
+  border: 2px solid white;
 }
 
-.catalogo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+.btn-rojo {
+  background: #ff0000;
+  color: white;
+  border: 2px solid white;
 }
 
-.catalogo div {
-  background: white;
-  border: 1px solid #ccc;
+/* TARJETAS DEL CATÁLOGO */
+.card-pan {
+  background: #ffffff;
+  border: 3px solid #005c00;
+  color: black;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ff0000;
   padding: 15px;
-  width: 250px;
+}
+
+/* IMAGEN DEL PAN */
+.pan-img {
+  width: 100%;
   border-radius: 8px;
+  margin-bottom: 10px;
 }
 
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 400px;
+.snow {
+  position: fixed;
+  top: -10px;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: caer linear forwards;
 }
 
-button {
-  padding: 10px;
-  background: #c97b28;
-  color: white;
-  border: none;
-  border-radius: 5px;
+@keyframes caer {
+  to { transform: translateY(110vh); }
 }
+
