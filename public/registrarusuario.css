@@ -1,0 +1,27 @@
+body {
+  background: #4040fb;
+  color: white;
+  font-family: Arial;
+}
+
+.container {
+  width: 300px;
+  margin: 50px auto;
+  padding: 20px;
+  background: #ffffff;
+  color: black;
+  border-radius: 10px;
+  border: 3px solid #005c00;
+}
+
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+button {
+  background: #005c00;
+  color: white;
+  border: none;
+}

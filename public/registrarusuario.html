@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Usuario</title>
+  <link rel="stylesheet" href="registrarusuario.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Registrar Usuario</h2>
+    <form id="formRegistro">
+      <input type="text" name="nombre" placeholder="Nombre" required>
+      <input type="email" name="email" placeholder="Correo" required>
+      <input type="password" name="contrasena" placeholder="Contraseña" required>
+      <button type="submit">Registrar</button>
+    </form>
+    <a href="iniciarsesion.html">Iniciar Sesión</a>
+    <div id="navButtons" style="margin-top:10px;">
+      <a id="btnRegistrar" href="registrar.html" class="btn btn-verde" style="display:none">Registrar pan</a>
+      <a id="btnLogin" href="iniciarsesion.html" class="btn btn-verde">Iniciar sesión</a>
+      <a id="btnCart" href="/cart.html" class="btn btn-verde">Carrito (<span id="cartCount">0</span>)</a>
+      <button id="btnLogout" class="btn btn-rojo" style="display:none">Cerrar sesión</button>
+    </div>
+  </div>
+  <script src="registrarusuario.js"></script>
+  <script src="/panes.js"></script>
+</body>
+</html>

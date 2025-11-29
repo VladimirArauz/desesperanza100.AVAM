@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión</title>
+  <link rel="stylesheet" href="iniciarsesion.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Iniciar Sesión</h2>
+    <form id="formLogin">
+      <input type="email" name="email" placeholder="Correo" required>
+      <input type="password" name="contrasena" placeholder="Contraseña" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <a href="registrarusuario.html">Registrar Usuario</a>
+    <div id="navButtons" style="margin-top:10px;">
+      <a id="btnRegistrar" href="registrar.html" class="btn btn-verde" style="display:none">Registrar pan</a>
+      <a id="btnLogin" href="iniciarsesion.html" class="btn btn-verde">Iniciar sesión</a>
+      <a id="btnCart" href="/cart.html" class="btn btn-verde">Carrito (<span id="cartCount">0</span>)</a>
+      <button id="btnLogout" class="btn btn-rojo" style="display:none">Cerrar sesión</button>
+    </div>
+  </div>
+  <script src="iniciarsesion.js"></script>
+  <script src="/panes.js"></script>
+</body>
+</html>
