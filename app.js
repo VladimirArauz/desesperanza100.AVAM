@@ -9,7 +9,9 @@ import jwt from "jsonwebtoken";
 
 const { Pool } = pkg;
 
-
+/* ======================
+   Configuración básica
+====================== */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -24,28 +26,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
-
 app.use(express.static(path.join(__dirname, "public")));
-
-// Log de peticiones
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
 
 /* ======================
    PostgreSQL
 ====================== */
-
-
 let db;
 
 async function initDb() {
   try {
     db = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      connectionString:
+        process.env.DATABASE_URL ||
+        "postgresql://root:mxTICIx8y4cJ65hL4oebymFPzmkVLnFh@dpg-d5g60m3e5dus73do8th0-a.oregon-postgres.render.com:5432/desesperanza_8zy8",
+      ssl: { rejectUnauthorized: false },
     });
+
     await db.query("SELECT 1");
     console.log("✅ PostgreSQL conectado");
   } catch (err) {
@@ -55,14 +51,12 @@ async function initDb() {
 }
 
 async function ensureTables() {
-  if (!db) return;
-
   await db.query(`
     CREATE TABLE IF NOT EXISTS panes (
       id SERIAL PRIMARY KEY,
-      nombre VARCHAR(255),
-      precio NUMERIC(10,2),
-      cantidad INT,
+      nombre VARCHAR(255) NOT NULL,
+      precio NUMERIC(10,2) NOT NULL,
+      cantidad INT NOT NULL,
       descripcion TEXT,
       imagen BYTEA,
       imagen_mimetype VARCHAR(255)
@@ -72,29 +66,32 @@ async function ensureTables() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS usuarios (
       id SERIAL PRIMARY KEY,
-      nombre VARCHAR(255),
-      email VARCHAR(255) UNIQUE,
-      contrasena VARCHAR(255)
+      nombre VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      contrasena VARCHAR(255) NOT NULL
     )
   `);
 }
 
 /* ======================
-   Auth Middleware
+   Middlewares custom
 ====================== */
+function requireDB(req, res, next) {
+  if (!db) return res.status(500).json({ error: "DB no disponible" });
+  next();
+}
+
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Bearer ")) {
-    return res.status(401).json({ ok: false, error: "No autorizado" });
+    return res.status(401).json({ error: "No autorizado" });
   }
-
   try {
     const token = auth.split(" ")[1];
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
-    return res.status(401).json({ ok: false, error: "Token inválido" });
+    return res.status(401).json({ error: "Token inválido" });
   }
 }
 
@@ -103,72 +100,65 @@ function requireAuth(req, res, next) {
 ====================== */
 
 // Health
-app.get("/health", (req, res) => {
-  res.json({ ok: true, db: !!db });
+app.get("/health", requireDB, (req, res) => {
+  res.json({ ok: true });
 });
 
 // Obtener panes
-app.get("/api/panes", async (req, res) => {
-  if (!db) return res.status(500).json({ error: "DB no disponible" });
-
+app.get("/api/panes", requireDB, async (req, res) => {
   try {
-    const result = await db.query(
-      "SELECT id, nombre, precio, cantidad, descripcion, imagen, imagen_mimetype FROM panes"
-    );
+    const result = await db.query("SELECT * FROM panes ORDER BY id DESC");
 
-    const data = result.rows.map(pan => ({
-      ...pan,
-      imagen: pan.imagen ? pan.imagen.toString("base64") : null,
-      imagen_mimetype: pan.imagen_mimetype || "image/jpeg",
+    const panes = result.rows.map(p => ({
+      ...p,
+      imagen: p.imagen ? p.imagen.toString("base64") : null,
+      imagen_mimetype: p.imagen_mimetype || "image/jpeg",
     }));
 
-    res.json(data);
+    res.json(panes);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error consultando panes" });
+    res.status(500).json({ error: "Error cargando panes" });
   }
 });
 
 // Obtener pan por ID
-app.get("/api/panes/:id", async (req, res) => {
+app.get("/api/panes/:id", requireDB, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.query(
-      "SELECT * FROM panes WHERE id = $1",
-      [id]
-    );
+    const result = await db.query("SELECT * FROM panes WHERE id=$1", [id]);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "No encontrado" });
-    }
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Pan no encontrado" });
 
     const pan = result.rows[0];
     pan.imagen = pan.imagen ? pan.imagen.toString("base64") : null;
 
     res.json(pan);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error consultando pan" });
   }
 });
 
 // Guardar pan
-app.post("/api/guardar", requireAuth, async (req, res) => {
+app.post("/api/guardar", requireDB, requireAuth, async (req, res) => {
   try {
     const { nombre, precio, cantidad, descripcion } = req.body;
     const imagenFile = req.files?.imagen;
 
     if (!nombre || !precio || !cantidad || !imagenFile) {
-      return res.status(400).json({ error: "Faltan campos" });
+      return res.status(400).json({ error: "Datos incompletos" });
     }
 
     await db.query(
-      `INSERT INTO panes
-       (nombre, precio, cantidad, descripcion, imagen, imagen_mimetype)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO panes 
+      (nombre, precio, cantidad, descripcion, imagen, imagen_mimetype)
+      VALUES ($1,$2,$3,$4,$5,$6)`,
       [
         nombre,
-        parseFloat(precio),
-        parseInt(cantidad),
+        precio,
+        cantidad,
         descripcion || "",
         imagenFile.data,
         imagenFile.mimetype,
@@ -182,119 +172,42 @@ app.post("/api/guardar", requireAuth, async (req, res) => {
   }
 });
 
-// Registro
-app.post("/api/registrarusuario", async (req, res) => {
+// Actualizar pan
+app.put("/api/panes/:id", requireDB, requireAuth, async (req, res) => {
   try {
-    const { nombre, email, contrasena } = req.body;
+    const { id } = req.params;
+    const { nombre, precio, cantidad, descripcion } = req.body;
+    const imagenFile = req.files?.imagen;
 
-    const existe = await db.query(
-      "SELECT id FROM usuarios WHERE email = $1",
-      [email]
-    );
+    const fields = [];
+    const values = [];
+    let i = 1;
 
-    if (existe.rows.length > 0) {
-      return res.status(400).json({ error: "Correo ya registrado" });
+    if (nombre) { fields.push(`nombre=$${i++}`); values.push(nombre); }
+    if (precio) { fields.push(`precio=$${i++}`); values.push(precio); }
+    if (cantidad) { fields.push(`cantidad=$${i++}`); values.push(cantidad); }
+    if (descripcion) { fields.push(`descripcion=$${i++}`); values.push(descripcion); }
+    if (imagenFile) {
+      fields.push(`imagen=$${i++}`, `imagen_mimetype=$${i++}`);
+      values.push(imagenFile.data, imagenFile.mimetype);
     }
 
-    const hash = await bcrypt.hash(contrasena, 10);
+    if (fields.length === 0)
+      return res.status(400).json({ error: "Nada que actualizar" });
+
+    values.push(id);
 
     await db.query(
-      "INSERT INTO usuarios (nombre, email, contrasena) VALUES ($1, $2, $3)",
-      [nombre, email, hash]
+      `UPDATE panes SET ${fields.join(", ")} WHERE id=$${i}`,
+      values
     );
 
-    res.json({ ok: true, message: "Usuario registrado" });
-  } catch {
-    res.status(500).json({ error: "Error registrando usuario" });
+    res.json({ ok: true, message: "Pan actualizado" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error actualizando pan" });
   }
-});
-
-// Login
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, contrasena } = req.body;
-
-    const result = await db.query(
-      "SELECT * FROM usuarios WHERE email = $1",
-      [email]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Usuario no encontrado" });
-    }
-
-    const usuario = result.rows[0];
-    const valido = await bcrypt.compare(contrasena, usuario.contrasena);
-
-    if (!valido) {
-      return res.status(400).json({ error: "Contraseña incorrecta" });
-    }
-
-    const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
-      JWT_SECRET,
-      { expiresIn: "8h" }
-    );
-
-    res.json({
-      ok: true,
-      usuario: { id: usuario.id, nombre: usuario.nombre, email },
-      token,
-    });
-  } catch {
-    res.status(500).json({ error: "Error en login" });
-  }
-});
-
-// Actualizar pan
-app.put("/api/panes/:id", requireAuth, async (req, res) => {
-  const { id } = req.params;
-  const { nombre, precio, cantidad, descripcion } = req.body;
-  const imagenFile = req.files?.imagen;
-
-  const fields = [];
-  const values = [];
-  let i = 1;
-
-  if (nombre) { fields.push(`nombre=$${i++}`); values.push(nombre); }
-  if (precio) { fields.push(`precio=$${i++}`); values.push(precio); }
-  if (cantidad) { fields.push(`cantidad=$${i++}`); values.push(cantidad); }
-  if (descripcion) { fields.push(`descripcion=$${i++}`); values.push(descripcion); }
-  if (imagenFile) {
-    fields.push(`imagen=$${i++}`, `imagen_mimetype=$${i++}`);
-    values.push(imagenFile.data, imagenFile.mimetype);
-  }
-
-  values.push(id);
-
-  await db.query(
-    `UPDATE panes SET ${fields.join(", ")} WHERE id=$${i}`,
-    values
-  );
-
-  res.json({ ok: true, message: "Pan actualizado" });
 });
 
 // Eliminar pan
-app.delete("/api/panes/:id", requireAuth, async (req, res) => {
-  await db.query("DELETE FROM panes WHERE id=$1", [req.params.id]);
-  res.json({ ok: true, message: "Pan eliminado" });
-});
-
-/* ======================
-   Start
-====================== */
-async function start() {
-  await initDb();
-  await ensureTables();
-
-  app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-  });
-
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor en http://localhost:${PORT}`);
-  });
-}
-
-start();
+app.delete("/api/panes/:id", r
