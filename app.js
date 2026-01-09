@@ -210,4 +210,93 @@ app.put("/api/panes/:id", requireDB, requireAuth, async (req, res) => {
 });
 
 // Eliminar pan
-app.delete("/api/panes/:id", r
+app.delete("/api/panes/:id", requireDB, requireAuth, async (req, res) => {
+  try {
+    await db.query("DELETE FROM panes WHERE id=$1", [req.params.id]);
+    res.json({ ok: true, message: "Pan eliminado" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error eliminando pan" });
+  }
+});
+
+// Registro usuario
+app.post("/api/registrarusuario", requireDB, async (req, res) => {
+  try {
+    const { nombre, email, contrasena } = req.body;
+    if (!nombre || !email || !contrasena)
+      return res.status(400).json({ error: "Datos incompletos" });
+
+    const existe = await db.query(
+      "SELECT id FROM usuarios WHERE email=$1",
+      [email]
+    );
+
+    if (existe.rows.length > 0)
+      return res.status(400).json({ error: "Correo ya registrado" });
+
+    const hash = await bcrypt.hash(contrasena, 10);
+
+    await db.query(
+      "INSERT INTO usuarios (nombre,email,contrasena) VALUES ($1,$2,$3)",
+      [nombre, email, hash]
+    );
+
+    res.json({ ok: true, message: "Usuario registrado" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error registrando usuario" });
+  }
+});
+
+// Login
+app.post("/api/login", requireDB, async (req, res) => {
+  try {
+    const { email, contrasena } = req.body;
+
+    const result = await db.query(
+      "SELECT * FROM usuarios WHERE email=$1",
+      [email]
+    );
+
+    if (result.rows.length === 0)
+      return res.status(400).json({ error: "Usuario no encontrado" });
+
+    const usuario = result.rows[0];
+    const ok = await bcrypt.compare(contrasena, usuario.contrasena);
+    if (!ok) return res.status(400).json({ error: "Contraseña incorrecta" });
+
+    const token = jwt.sign(
+      { id: usuario.id, email: usuario.email },
+      JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    res.json({
+      ok: true,
+      usuario: { id: usuario.id, nombre: usuario.nombre, email },
+      token,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error en login" });
+  }
+});
+
+/* ======================
+   Start
+====================== */
+async function start() {
+  await initDb();
+  await ensureTables();
+
+  app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  });
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor en http://localhost:${PORT}`);
+  });
+}
+
+start();
