@@ -43,7 +43,8 @@ async function initDb() {
       host: process.env.DB_HOST || "localhost",
       user: process.env.DB_USER || "postgres",
       password: process.env.DB_PASSWORD || "tu_password",
-      database: process.env.DB_NAME || "desesperanza100",
+      database: process.env.DB_NAME || "desesperanza_8zy8",
+
       port: 5432,
     });
 
