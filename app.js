@@ -40,9 +40,9 @@ let db;
 async function initDb() {
   try {
     db = new Client({
-      host: process.env.DB_HOST || "localhost",
+      host: process.env.DB_HOST || "postgresql://root:mxTICIx8y4cJ65hL4oebymFPzmkVLnFh@dpg-d5g60m3e5dus73do8th0-a.oregon-postgres.render.com/desesperanza_8zy8",
       user: process.env.DB_USER || "postgres",
-      password: process.env.DB_PASSWORD || "tu_password",
+      password: process.env.DB_PASSWORD || "mxTICIx8y4cJ65hL4oebymFPzmkVLnFh",
       database: process.env.DB_NAME || "desesperanza_8zy8",
 
       port: 5432,
