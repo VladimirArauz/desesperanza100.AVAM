@@ -40,16 +40,16 @@ let db;
 async function initDb() {
   try {
     db = new Client({
-      host: process.env.DB_HOST || "postgresql://root:mxTICIx8y4cJ65hL4oebymFPzmkVLnFh@dpg-d5g60m3e5dus73do8th0-a.oregon-postgres.render.com/desesperanza_8zy8",
-      user: process.env.DB_USER || "postgres",
-      password: process.env.DB_PASSWORD || "mxTICIx8y4cJ65hL4oebymFPzmkVLnFh",
-      database: process.env.DB_NAME || "desesperanza_8zy8",
-
-      port: 5432,
+      connectionString:
+        process.env.DATABASE_URL ||
+        "postgresql://root:mxTICIx8y4cJ65hL4oebymFPzmkVLnFh@dpg-d5g60m3e5dus73do8th0-a.oregon-postgres.render.com:5432/desesperanza_8zy8",
+      ssl: {
+        rejectUnauthorized: false,
+      },
     });
 
     await db.connect();
-    console.log("✅ Conectado a PostgreSQL");
+    console.log("✅ Conectado a PostgreSQL (Render)");
   } catch (err) {
     console.error("❌ Error conectando a PostgreSQL:", err.message);
     db = null;
