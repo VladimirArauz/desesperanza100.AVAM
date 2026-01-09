@@ -7,7 +7,8 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const { Client } = pkg;
+const { Pool } = pkg;
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,24 +36,21 @@ app.use((req, res, next) => {
 /* ======================
    PostgreSQL
 ====================== */
+
+
 let db;
 
 async function initDb() {
   try {
-    db = new Client({
-      connectionString:
-        process.env.DATABASE_URL ||
-        "postgresql://root:mxTICIx8y4cJ65hL4oebymFPzmkVLnFh@dpg-d5g60m3e5dus73do8th0-a.oregon-postgres.render.com:5432/desesperanza_8zy8",
-      ssl: {
-        rejectUnauthorized: false,
-      },
+    db = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
     });
-
-    await db.connect();
-    console.log("✅ Conectado a PostgreSQL (Render)");
+    await db.query("SELECT 1");
+    console.log("✅ PostgreSQL conectado");
   } catch (err) {
-    console.error("❌ Error conectando a PostgreSQL:", err.message);
-    db = null;
+    console.error("❌ Error PostgreSQL:", err);
+    process.exit(1);
   }
 }
 
