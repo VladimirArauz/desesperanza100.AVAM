@@ -31,39 +31,43 @@ app.use((req, res, next) => {
 
 // Conexión a MySQL con soporte de variables de entorno
 let db;
+
 async function initDb() {
   try {
-    db = await mysql.createConnection({
+    db = new Client({
       host: process.env.DB_HOST || "localhost",
-      user: process.env.DB_USER || "root",
-      password: process.env.DB_PASSWORD || "n0m3l0",
+      user: process.env.DB_USER || "postgres",
+      password: process.env.DB_PASSWORD || "tu_password",
       database: process.env.DB_NAME || "desesperanza100",
+      port: 5432,
     });
-    console.log("Conectado a MySQL");
+
+    await db.connect();
+    console.log("Conectado a PostgreSQL");
   } catch (err) {
-    console.error("No se pudo conectar a MySQL:", err.message);
+    console.error("No se pudo conectar a PostgreSQL:", err.message);
     db = null;
   }
 }
 
 async function ensureTables() {
   if (!db) return;
-  // Crear tablas mínimas si no existen
-  await db.execute(`
+
+  await db.query(`
     CREATE TABLE IF NOT EXISTS panes (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       nombre VARCHAR(255),
-      precio DECIMAL(10,2),
+      precio NUMERIC(10,2),
       cantidad INT,
       descripcion TEXT,
-      imagen LONGBLOB,
+      imagen BYTEA,
       imagen_mimetype VARCHAR(255)
     )
   `);
 
-  await db.execute(`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS usuarios (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       nombre VARCHAR(255),
       email VARCHAR(255) UNIQUE,
       contrasena VARCHAR(255)
