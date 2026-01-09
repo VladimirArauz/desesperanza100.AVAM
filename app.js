@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
 import fileUpload from "express-fileupload";
-import mysql from "mysql2/promise";
+import pkg from "pg";
+const { Client } = pkg;
+
 import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
