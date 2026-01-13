@@ -1,0 +1,18 @@
+.grafica-box {
+  background: #ffffff;
+  border: 3px solid #005c00;
+  color: black;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 10px #ff0000;
+}
+
+.grafica-box h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #ff0000;
+}
+
+canvas {
+  max-height: 400px;
+}

@@ -8,7 +8,7 @@ async function cargarCatalogo() {
     const panes = await res.json();
 
     const cont = document.getElementById("catalogo");
-    if (!cont) return; // nothing to render into
+    if (!cont) return;
     cont.innerHTML = "";
 
     if (!Array.isArray(panes) || panes.length === 0) {
@@ -24,7 +24,6 @@ async function cargarCatalogo() {
       const div = document.createElement("div");
       div.className = "col-md-4";
 
-      // Ensure safe values and formatting
       const precio = Number(pan.precio ?? 0).toFixed(2);
       const cantidad = Number(pan.cantidad ?? 0);
       const descripcion = pan.descripcion ?? "";
@@ -48,7 +47,6 @@ async function cargarCatalogo() {
       cont.appendChild(div);
     });
 
-    // Attach event listeners for add to cart / edit / delete
     document.querySelectorAll(".btn-add").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.dataset.id;
@@ -56,7 +54,7 @@ async function cargarCatalogo() {
         addToCart(item);
       });
     });
-    // Show edit/delete if logged in
+
     const token = localStorage.getItem("token");
     if (token) {
       document.querySelectorAll(".btn-delete").forEach((btn) => {
@@ -111,7 +109,6 @@ if (form) {
     if (!imagenField || !imagenField.files || imagenField.files.length === 0)
       return alert("Debes seleccionar una imagen");
 
-    // require login
     const token = localStorage.getItem("token");
     if (!token) return alert("Debes iniciar sesión para registrar un pan");
 
@@ -133,7 +130,6 @@ if (form) {
 
       alert(json.message || "Guardado");
       form.reset();
-      // After a short delay return to the catalog
       setTimeout(() => (window.location.href = "/"), 700);
     } catch (err) {
       console.error("Error guardando pan:", err);
@@ -148,12 +144,17 @@ function renderUserButtons() {
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
   const btnUserRegister = document.getElementById("btnUserRegister");
+  const btnGraficas = document.getElementById("btnGraficas");
+  const btnHistorial = document.getElementById("btnHistorial");
   const userGreeting = document.getElementById("userGreeting");
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  
   if (user) {
     if (btnLogin) btnLogin.style.display = "none";
     if (btnRegistrar) btnRegistrar.style.display = "inline-block";
     if (btnUserRegister) btnUserRegister.style.display = "none";
+    if (btnGraficas) btnGraficas.style.display = "inline-block";
+    if (btnHistorial) btnHistorial.style.display = "inline-block";
     if (btnLogout) {
       btnLogout.style.display = "inline-block";
       btnLogout.onclick = () => {
@@ -163,12 +164,13 @@ function renderUserButtons() {
       };
     }
     if (userGreeting) userGreeting.textContent = `Hola ${user.nombre}`;
-    // update cart count when user changes state
     updateCartCount();
-    } else {
+  } else {
     if (btnLogin) btnLogin.style.display = "inline-block";
     if (btnRegistrar) btnRegistrar.style.display = "none";
     if (btnUserRegister) btnUserRegister.style.display = "inline-block";
+    if (btnGraficas) btnGraficas.style.display = "none";
+    if (btnHistorial) btnHistorial.style.display = "none";
     if (btnLogout) btnLogout.style.display = "none";
     if (userGreeting) userGreeting.textContent = "";
     updateCartCount();

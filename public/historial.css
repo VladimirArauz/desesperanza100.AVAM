@@ -1,0 +1,72 @@
+.compra-box {
+  background: #ffffff;
+  border: 3px solid #005c00;
+  color: black;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 0 10px #ff0000;
+}
+
+.compra-header {
+  border-bottom: 2px solid #ff0000;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.compra-item {
+  padding: 5px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.modal-ticket {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content-ticket {
+  background-color: #ffffff;
+  margin: 5% auto;
+  padding: 20px;
+  border: 3px solid #005c00;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 10px;
+  color: black;
+}
+
+.close-ticket {
+  color: #ff0000;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.ticket {
+  font-family: 'Courier New', monospace;
+  text-align: center;
+}
+
+.ticket h2 {
+  color: #ff0000;
+  border-bottom: 2px dashed #000;
+  padding-bottom: 10px;
+}
+
+.ticket-items {
+  text-align: left;
+  margin: 20px 0;
+}
+
+.ticket-total {
+  border-top: 2px dashed #000;
+  padding-top: 10px;
+  font-weight: bold;
+  font-size: 1.2em;
+}

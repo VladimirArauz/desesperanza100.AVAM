@@ -71,6 +71,16 @@ async function ensureTables() {
       contrasena VARCHAR(255) NOT NULL
     )
   `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS compras (
+      id SERIAL PRIMARY KEY,
+      usuario_id INT REFERENCES usuarios(id),
+      fecha TIMESTAMP DEFAULT NOW(),
+      total NUMERIC(10,2) NOT NULL,
+      detalles JSONB NOT NULL
+    )
+  `);
 }
 
 /* ======================
@@ -84,14 +94,18 @@ function requireDB(req, res, next) {
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "No autorizado" });
+    console.log("❌ No se proporcionó token de autorización");
+    return res.status(401).json({ error: "No autorizado - Token no proporcionado" });
   }
   try {
     const token = auth.split(" ")[1];
-    req.user = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    console.log("✅ Usuario autenticado:", decoded.email);
     next();
-  } catch {
-    return res.status(401).json({ error: "Token inválido" });
+  } catch (err) {
+    console.log("❌ Token inválido:", err.message);
+    return res.status(401).json({ error: "Token inválido o expirado" });
   }
 }
 
@@ -280,6 +294,113 @@ app.post("/api/login", requireDB, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error en login" });
+  }
+});
+
+// Procesar compra
+app.post("/api/comprar", requireDB, requireAuth, async (req, res) => {
+  try {
+    const { carrito, total } = req.body;
+    const userId = req.user.id;
+
+    console.log("📦 Procesando compra para usuario:", userId);
+    console.log("🛒 Carrito:", carrito);
+
+    if (!carrito || carrito.length === 0) {
+      return res.status(400).json({ error: "Carrito vacío" });
+    }
+
+    // Verificar stock y actualizar cantidades
+    for (const item of carrito) {
+      const result = await db.query("SELECT cantidad FROM panes WHERE id=$1", [item.id]);
+      if (result.rows.length === 0) {
+        return res.status(400).json({ error: `Pan ${item.nombre} no encontrado` });
+      }
+      
+      const stockActual = result.rows[0].cantidad;
+      if (stockActual < item.qty) {
+        return res.status(400).json({ error: `Stock insuficiente para ${item.nombre}. Disponible: ${stockActual}` });
+      }
+
+      await db.query(
+        "UPDATE panes SET cantidad = cantidad - $1 WHERE id = $2",
+        [item.qty, item.id]
+      );
+      console.log(`✅ Stock actualizado para ${item.nombre}: -${item.qty}`);
+    }
+
+    // Guardar compra
+    await db.query(
+      "INSERT INTO compras (usuario_id, total, detalles) VALUES ($1, $2, $3)",
+      [userId, total, JSON.stringify(carrito)]
+    );
+
+    console.log("✅ Compra guardada exitosamente");
+    res.json({ ok: true, message: "Compra realizada exitosamente" });
+  } catch (err) {
+    console.error("❌ Error procesando compra:", err);
+    res.status(500).json({ error: "Error procesando compra" });
+  }
+});
+
+// Obtener historial de compras
+app.get("/api/historial", requireDB, requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await db.query(
+      "SELECT * FROM compras WHERE usuario_id=$1 ORDER BY fecha DESC",
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error obteniendo historial" });
+  }
+});
+
+// Estadísticas para gráficas
+app.get("/api/estadisticas", requireDB, requireAuth, async (req, res) => {
+  try {
+    // Panes más vendidos
+    const ventasResult = await db.query(`
+      SELECT 
+        elem->>'nombre' as nombre,
+        SUM((elem->>'qty')::int) as total_vendido
+      FROM compras,
+      LATERAL jsonb_array_elements(detalles) as elem
+      GROUP BY elem->>'nombre'
+      ORDER BY total_vendido DESC
+      LIMIT 5
+    `);
+
+    // Usuarios que más han gastado
+    const usuariosResult = await db.query(`
+      SELECT u.nombre, SUM(c.total) as total_gastado
+      FROM compras c
+      JOIN usuarios u ON c.usuario_id = u.id
+      GROUP BY u.nombre
+      ORDER BY total_gastado DESC
+      LIMIT 5
+    `);
+
+    // Ganancias por día (últimos 7 días)
+    const gananciasResult = await db.query(`
+      SELECT DATE(fecha) as dia, SUM(total) as ganancia
+      FROM compras
+      WHERE fecha >= NOW() - INTERVAL '7 days'
+      GROUP BY DATE(fecha)
+      ORDER BY dia ASC
+    `);
+
+    res.json({
+      panesVendidos: ventasResult.rows,
+      usuariosTop: usuariosResult.rows,
+      ganancias: gananciasResult.rows
+    });
+  } catch (err) {
+    console.error("❌ Error obteniendo estadísticas:", err);
+    res.status(500).json({ error: "Error obteniendo estadísticas" });
   }
 });
 
